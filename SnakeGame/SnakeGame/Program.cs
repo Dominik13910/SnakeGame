@@ -109,3 +109,164 @@ class Snake : IRenderable
     public bool Dead { get; set; }
     public Position Head => _body.First();
     public IEnumerable<Position> Body => _body.Skip(1);
+    public void Move(Direction direction)
+    {
+        if (Dead) throw new InvalidOperationException();
+
+        Position newHead;
+
+        switch (direction)
+        {
+            case Direction.Up:
+                newHead = Head.DownBy(-1);
+                break;
+
+            case Direction.Left:
+                newHead = Head.RightBy(-1);
+                break;
+
+            case Direction.Down:
+                newHead = Head.DownBy(1);
+                break;
+
+            case Direction.Right:
+                newHead = Head.RightBy(1);
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+
+        if (_body.Contains(newHead) || !PositionIsValid(newHead))
+        {
+            Dead = true;
+            return;
+        }
+
+        _body.Insert(0, newHead);
+
+        if (_growthSpurtsRemaining > 0)
+        {
+            _growthSpurtsRemaining--;
+        }
+        else
+        {
+            _body.RemoveAt(_body.Count - 1);
+        }
+    }
+
+    public void Grow()
+    {
+        if (Dead) throw new InvalidOperationException();
+
+        _growthSpurtsRemaining++;
+    }
+
+    public void Render()
+    {
+        Console.SetCursorPosition(Head.Left, Head.Top);
+        Console.Write("1");
+
+        foreach (var position in Body)
+        {
+            Console.SetCursorPosition(position.Left, position.Top);
+            Console.Write("■");
+        }
+    }
+
+    public void Render2()
+    {
+        Console.SetCursorPosition(Head.Left, Head.Top);
+        Console.Write("2");
+
+        foreach (var position in Body)
+        {
+            Console.SetCursorPosition(position.Left, position.Top);
+            Console.Write("■");
+        }
+    }
+
+    private static bool PositionIsValid(Position position) =>
+        position.Top >= 0 && position.Left >= 0;
+}
+
+class SnakeGame : IRenderable
+{
+    private static readonly Position Origin = new Position(0, 0);
+
+    private Direction _currentDirection1;
+    private Direction _nextDirection1;
+    private Snake _snake1;
+
+    private Direction _currentDirection2;
+    private Direction _nextDirection2;
+    private Snake _snake2;
+
+    private Mause _apple;
+
+    public SnakeGame()
+    {
+        _snake1 = new Snake(Origin, initialSize: 5);
+        _snake2 = new Snake(new Position(10, 10), initialSize: 5); // Starting position for the second snake
+        _apple = CreateApple();
+        _currentDirection1 = Direction.Right;
+        _nextDirection1 = Direction.Right;
+
+        _currentDirection2 = Direction.Right;
+        _nextDirection2 = Direction.Right;
+    }
+
+    public bool GameOver => _snake1.Dead || _snake2.Dead;
+
+    Direction newDirection1 = Direction.Right;
+    Direction newDirection2 = Direction.Right;
+    public void OnKeyPress(ConsoleKey key)
+    {
+        switch (key)
+        {
+            case ConsoleKey.W:
+                newDirection1 = Direction.Up;
+                break;
+
+            case ConsoleKey.A:
+                newDirection1 = Direction.Left;
+                break;
+
+            case ConsoleKey.S:
+                newDirection1 = Direction.Down;
+                break;
+
+            case ConsoleKey.D:
+                newDirection1 = Direction.Right;
+                break;
+
+            case ConsoleKey.UpArrow:
+                newDirection2 = Direction.Up;
+                break;
+
+            case ConsoleKey.LeftArrow:
+                newDirection2 = Direction.Left;
+                break;
+
+            case ConsoleKey.DownArrow:
+                newDirection2 = Direction.Down;
+                break;
+
+            case ConsoleKey.RightArrow:
+                newDirection2 = Direction.Right;
+                break;
+
+            default:
+                return;
+        }
+
+        if (newDirection1 != OppositeDirectionTo(_currentDirection1))
+        {
+            _nextDirection1 = newDirection1;
+        }
+
+        if (newDirection2 != OppositeDirectionTo(_currentDirection2))
+        {
+            _nextDirection2 = newDirection2;
+        }
+    }
