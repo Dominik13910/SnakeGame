@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -109,6 +109,7 @@ class Snake : IRenderable
     public bool Dead { get; set; }
     public Position Head => _body.First();
     public IEnumerable<Position> Body => _body.Skip(1);
+
     public void Move(Direction direction)
     {
         if (Dead) throw new InvalidOperationException();
@@ -270,3 +271,90 @@ class SnakeGame : IRenderable
             _nextDirection2 = newDirection2;
         }
     }
+
+    public void OnGameTick()
+    {
+        if (GameOver) throw new InvalidOperationException();
+
+        _currentDirection1 = _nextDirection1;
+        _snake1.Move(_currentDirection1);
+
+        _currentDirection2 = _nextDirection2;
+        _snake2.Move(_currentDirection2);
+
+        if (_snake1.Head.Equals(_snake2.Head))
+        {
+            _snake1.Dead = true;
+            _snake2.Dead = true;
+        }
+
+        if (_snake1.Head.Top == -1 || _snake1.Head.Top == Console.WindowHeight - 1 ||
+            _snake1.Head.Left == -1 || _snake1.Head.Left == Console.WindowWidth - 1)
+        {
+            _snake1.Dead = true;
+        }
+
+        if (_snake2.Head.Top == 0 || _snake2.Head.Top == Console.WindowHeight - 1 ||
+            _snake2.Head.Left == 0 || _snake2.Head.Left == Console.WindowWidth - 1)
+        {
+            _snake2.Dead = true;
+        }
+
+        if (_snake1.Head.Equals(_apple.Position))
+        {
+            _snake1.Grow();
+            _apple = CreateApple();
+        }
+
+        if (_snake2.Head.Equals(_apple.Position))
+        {
+            _snake2.Grow();
+            _apple = CreateApple();
+        }
+
+        if (_snake1.Body.Any(bodyPart => bodyPart.Equals(_snake1.Head)) ||
+            _snake2.Body.Any(bodyPart => bodyPart.Equals(_snake2.Head)) ||
+            _snake1.Body.Any(bodyPart => bodyPart.Equals(_snake2.Head)) ||
+            _snake2.Body.Any(bodyPart => bodyPart.Equals(_snake1.Head))
+            )
+        {
+            _snake1.Dead = true;
+            _snake2.Dead = true;
+        }
+    }
+
+    public void Render()
+    {
+        Console.Clear();
+        _snake1.Render();
+        _snake2.Render2();
+        _apple.Render();
+        Console.SetCursorPosition(0, 0);
+    }
+
+    private static Direction OppositeDirectionTo(Direction direction)
+    {
+        switch (direction)
+        {
+            case Direction.Up: return Direction.Down;
+            case Direction.Left: return Direction.Right;
+            case Direction.Right: return Direction.Left;
+            case Direction.Down: return Direction.Up;
+            default: throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    private static Mause CreateApple()
+    {
+        const int numberOfRows = 20;
+        const int numberOfColumns = 20;
+
+        var random = new Random();
+        var top = random.Next(0, numberOfRows + 1);
+        var left = random.Next(0, numberOfColumns + 1);
+        var position = new Position(top, left);
+        var Mause = new Mause(position);
+
+        return Mause;
+    }
+}
